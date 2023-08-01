@@ -1,3 +1,5 @@
+SMALL_IMAGE_SIZE = (60, 60)
+
 SMALL_FRAMES_VARIABLES = [
     'label_small_date',
     'label_small_image',
