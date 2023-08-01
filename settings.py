@@ -1,4 +1,5 @@
 SMALL_IMAGE_SIZE = (60, 60)
+BIG_IMAGE_SIZE = (150, 150)
 
 SMALL_FRAMES_VARIABLES = [
     'label_small_date',

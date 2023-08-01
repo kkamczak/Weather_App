@@ -24,14 +24,14 @@ class MyGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi('mygui.ui', self)
-
+        self.show()
         self.pushButtonSearch.clicked.connect(self.search)
         self.action_Close.triggered.connect(exit)
 
         self.small_frames = settings.SMALL_FRAMES
 
-        self.show()
 
+        self.setStyleSheet('background-color: #99ccff;')
 
     def search(self):
 
@@ -40,7 +40,7 @@ class MyGUI(QMainWindow):
             f'https://api.openweathermap.org/data/2.5/forecast?q={user_input}&lang=pl&units=metric&appid={API_KEY}')
         weather_data = requests.get(f'https://api.openweathermap.org/data/2.5/weather?q={user_input}&lang=pl&units=metric&appid={API_KEY}')
 
-        #print(forecast_data.json())
+        print(weather_data.json())
 
         if weather_data.json()['cod'] == '404':
             self.message_box('Wrong location name!')
@@ -49,17 +49,18 @@ class MyGUI(QMainWindow):
 
     def update_informations(self, data, forecast):
         name = data.json()['name']
-        timezone = (f'UTC+{int(data.json()["timezone"] / 3600)}.00')
+        timezone = get_timezone(data.json()['timezone'])
         country = data.json()['sys']['country']
         time = str(datetime.fromtimestamp(data.json()['dt']).strftime('%H:%M'))
         weather = data.json()['weather'][0]['description']
-        temp = str(round(data.json()['main']['temp']))
-        humidity = str(round(data.json()['main']['humidity']))
-        pressure = str(data.json()['main']['pressure'])
-        wind = str(data.json()['wind']['speed'])
+        temp = f"{str(round(data.json()['main']['temp']))}°C"
+        humidity = f"{str(round(data.json()['main']['humidity']))}%"
+        pressure = f"{str(data.json()['main']['pressure'])}hPa"
+        wind = f"{str(data.json()['wind']['speed'])}m/s"
         sunrise = str(datetime.fromtimestamp(data.json()['sys']['sunrise']).strftime('%H:%M'))
         sunset = str(datetime.fromtimestamp(data.json()['sys']['sunset']).strftime('%H:%M'))
-        image = QPixmap('full_sun.png')
+        icon = data.json()['weather'][0]['icon']
+        image = get_image(icon, settings.BIG_IMAGE_SIZE)
 
         self.label_Name.setText(name)
         self.label_Timezone.setText(f'{timezone} {country}')
@@ -86,24 +87,32 @@ class MyGUI(QMainWindow):
         for id, day in enumerate(self.small_frames):
             lp=id*5
             date = str(datetime.fromtimestamp(data.json()['list'][lp]['dt']).strftime('%d.%m'))
-            #image = QPixmap('small_full_sun.png')
-            image = get_image()
-            temp = str(round(data.json()['list'][lp]['main']['temp']))
+            temp_max = str(round(data.json()['list'][lp]['main']['temp_max']))
+            temp_min = str(round(data.json()['list'][lp]['main']['temp_min']))
+            temp = f"{temp_max}/{temp_min}°C"
             weather = data.json()['list'][lp]['weather'][0]['main']
+            icon = data.json()['list'][lp]['weather'][0]['icon']
+            image = get_image(icon, settings.SMALL_IMAGE_SIZE)
             getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[0]}_{id + 1}').setText(date)
             getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[1]}_{id + 1}').setPixmap(image)
             getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[2]}_{id + 1}').setText(temp)
             getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[3]}_{id + 1}').setText(weather)
 
-def get_image():
-    url='https://openweathermap.org/img/wn/10d@2x.png'
+def get_image(icon, size):
+    url=f'https://openweathermap.org/img/wn/{icon}@2x.png'
     image = QImage()
     image.loadFromData(requests.get(url).content)
 
-    return QPixmap(image).scaled(settings.SMALL_IMAGE_SIZE[0], settings.SMALL_IMAGE_SIZE[1])
+    return QPixmap(image).scaled(size[0], size[1])
 
 def get_utc():
     return datetime.utcnow()
+
+def get_timezone(timezone):
+    sign = '+'
+    if int(timezone) < 0: sign = ''
+
+    return (f'UTC{sign}{int(timezone / 3600)}.00')
 
 def main():
 
