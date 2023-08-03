@@ -1,13 +1,16 @@
 import requests
 import sys
-import settings
 from datetime import datetime
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
-from PyQt5.QtGui import QPixmap, QImage
+from support import get_utc, get_image, get_timezone, get_unix_to_time, get_unix_to_short_date, get_api_key, get_forecast_days, \
+    get_country_codes, read_country
+from settings import SMALL_IMAGE_SIZE, BIG_IMAGE_SIZE, BACKGROUND_COLOR, FORECAST_FRAMES_AMOUNT, FRAMES_VARIABLES
 
-API_KEY = 'b4e4fbe1b77cc812f09ffd954f8f791a'
+API_KEY = get_api_key()
+COUNTRY_CODES = get_country_codes()
+
 
 #---------CATCHING ERRORS-------------------------------------------------------------------------------------
 def catch_exceptions(t, val, tb):
@@ -21,105 +24,100 @@ sys.excepthook = catch_exceptions
 #------------------------------------------------------------------------------------------------------------
 
 class MyGUI(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        uic.loadUi('mygui.ui', self)
+        # Load and init GUI-----------------
+        uic.loadUi('gui/mygui.ui', self)
         self.show()
+
+        # Configure all buttons-------------
         self.pushButtonSearch.clicked.connect(self.search)
         self.action_Close.triggered.connect(exit)
 
-        self.small_frames = settings.SMALL_FRAMES
+        # Define data-----------------------
+        self.weather_data = None
+        self.forecast_data = None
+        self.forecast_days = None
+
+        self.setStyleSheet(f'background-color: {BACKGROUND_COLOR};')
 
 
-        self.setStyleSheet('background-color: #99ccff;')
 
-    def search(self):
+    def search(self) -> None:
 
         user_input = self.line_edit_search.text()
-        forecast_data = requests.get(
-            f'https://api.openweathermap.org/data/2.5/forecast?q={user_input}&lang=pl&units=metric&appid={API_KEY}')
-        weather_data = requests.get(f'https://api.openweathermap.org/data/2.5/weather?q={user_input}&lang=pl&units=metric&appid={API_KEY}')
+        self.forecast_data = requests.get(
+            f'https://api.openweathermap.org/data/2.5/forecast?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
+        self.weather_data = requests.get(
+            f'https://api.openweathermap.org/data/2.5/weather?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
 
-        print(weather_data.json())
 
-        if weather_data.json()['cod'] == '404':
-            self.message_box('Wrong location name!')
+        if self.weather_data['cod'] == 401:
+            self.message_box('There was problem with loading weather data of this location!', self.weather_data['message'])
         else:
-            self.update_informations(weather_data, forecast_data)
+            self.update_informations(self.weather_data)
 
-    def update_informations(self, data, forecast):
-        name = data.json()['name']
-        timezone = get_timezone(data.json()['timezone'])
-        country = data.json()['sys']['country']
-        time = str(datetime.fromtimestamp(data.json()['dt']).strftime('%H:%M'))
-        weather = data.json()['weather'][0]['description']
-        temp = f"{str(round(data.json()['main']['temp']))}°C"
-        humidity = f"{str(round(data.json()['main']['humidity']))}%"
-        pressure = f"{str(data.json()['main']['pressure'])}hPa"
-        wind = f"{str(data.json()['wind']['speed'])}m/s"
-        sunrise = str(datetime.fromtimestamp(data.json()['sys']['sunrise']).strftime('%H:%M'))
-        sunset = str(datetime.fromtimestamp(data.json()['sys']['sunset']).strftime('%H:%M'))
-        icon = data.json()['weather'][0]['icon']
-        image = get_image(icon, settings.BIG_IMAGE_SIZE)
+        if self.forecast_data['cod'] == 401:
+            self.message_box('There was problem with loading forecast data of this location!', self.forecast_data['message'])
+        else:
+            self.update_forecast(self.forecast_data)
+
+
+    def update_informations(self, weather: dict) -> None:
+        name = weather['name']
+        timezone = get_timezone(weather['timezone'])
+        country = read_country(weather['sys']['country'], COUNTRY_CODES)
+        time = get_unix_to_time(weather['dt'], timezone=weather['timezone'])
+        weather_description = weather['weather'][0]['description']
+        temp = f"{round(weather['main']['temp'])}°C"
+        humidity = f"{str(round(weather['main']['humidity']))}%"
+        pressure = f"{str(weather['main']['pressure'])}hPa"
+        wind = f"{str(weather['wind']['speed'])}m/s"
+        sunrise = get_unix_to_time(weather['sys']['sunrise'])
+        sunset = get_unix_to_time(weather['sys']['sunset'])
+        icon = weather['weather'][0]['icon']
+        image = get_image(icon, BIG_IMAGE_SIZE)
 
         self.label_Name.setText(name)
         self.label_Timezone.setText(f'{timezone} {country}')
         self.label_Datetime.setText(time)
-        self.label_Weather.setText(weather)
+        self.label_Weather.setText(weather_description)
         self.label_Temperature_display.setText(temp)
-        self.label_Humidity_display.setText(pressure)
-        self.label_Pressure_display.setText(humidity)
+        self.label_Humidity_display.setText(humidity)
+        self.label_Pressure_display.setText(pressure)
         self.label_Wind_display.setText(wind)
         self.label_Sunrise_display.setText(sunrise)
         self.label_Sunset_display.setText(sunset)
-
         self.label_main_image.setPixmap(image)
 
+    def update_forecast(self, forecast: dict) -> None:
+        forecast_days = get_forecast_days(forecast)
 
-        self.update_frames(forecast)
+        for i, day in enumerate(forecast_days):
+            date = get_unix_to_short_date(day['dt'])
+            temp_max = str(round(day['main']['temp_max']))
+            temp_min = str(round(day['main']['temp_min']))
+            temp = f"{temp_max}°C"
+            weather = day['weather'][0]['main']
+            icon = day['weather'][0]['icon']
+            image = get_image(icon, SMALL_IMAGE_SIZE)
+            getattr(self, f'{FRAMES_VARIABLES[0]}_{i + 1}').setText(date)
+            getattr(self, f'{FRAMES_VARIABLES[1]}_{i + 1}').setPixmap(image)
+            getattr(self, f'{FRAMES_VARIABLES[2]}_{i + 1}').setText(temp)
+            getattr(self, f'{FRAMES_VARIABLES[3]}_{i + 1}').setText(weather)
 
-    def message_box(self, msg):
+    def message_box(self, msg: str, info: str = None) -> None:
+        if info != None: text = f'{msg}\n--message: "{info}"'
+        else: text = msg
         message = QMessageBox()
-        message.setText(msg)
+        message.setText(text)
         message.exec_()
-
-    def update_frames(self, data):
-        for id, day in enumerate(self.small_frames):
-            lp=id*5
-            date = str(datetime.fromtimestamp(data.json()['list'][lp]['dt']).strftime('%d.%m'))
-            temp_max = str(round(data.json()['list'][lp]['main']['temp_max']))
-            temp_min = str(round(data.json()['list'][lp]['main']['temp_min']))
-            temp = f"{temp_max}/{temp_min}°C"
-            weather = data.json()['list'][lp]['weather'][0]['main']
-            icon = data.json()['list'][lp]['weather'][0]['icon']
-            image = get_image(icon, settings.SMALL_IMAGE_SIZE)
-            getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[0]}_{id + 1}').setText(date)
-            getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[1]}_{id + 1}').setPixmap(image)
-            getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[2]}_{id + 1}').setText(temp)
-            getattr(self, f'{settings.SMALL_FRAMES_VARIABLES[3]}_{id + 1}').setText(weather)
-
-def get_image(icon, size):
-    url=f'https://openweathermap.org/img/wn/{icon}@2x.png'
-    image = QImage()
-    image.loadFromData(requests.get(url).content)
-
-    return QPixmap(image).scaled(size[0], size[1])
-
-def get_utc():
-    return datetime.utcnow()
-
-def get_timezone(timezone):
-    sign = '+'
-    if int(timezone) < 0: sign = ''
-
-    return (f'UTC{sign}{int(timezone / 3600)}.00')
 
 def main():
 
     app = QApplication(sys.argv)
     window = MyGUI()
     app.exec_()
-
 
     raise RuntimeError
 
