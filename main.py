@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QLinearGradient, QIcon
 from support import get_image, get_timezone, get_unix_to_time, get_unix_to_short_date, get_api_key, get_forecast_days, \
-    get_country_codes, read_country, draw_city, save_day_to_file, message_box, get_unix, load_stylesheet
+    get_country_codes, read_country, draw_city, save_day_to_file, get_unix
 from settings import SMALL_IMAGE_SIZE, BIG_IMAGE_SIZE, STYLE, FRAMES_VARIABLES
 from options import Options
 
@@ -38,7 +38,7 @@ class MyGUI(QMainWindow):
 
         # Configure all buttons------------------------------------------------------------------------------
         self.push_Button_Search.clicked.connect(self.search)
-        self.action_Close.triggered.connect(exit)
+        self.action_Close.triggered.connect(self.close)
         self.action_Settings.triggered.connect(self.open_options)
         self.action_Save.triggered.connect(lambda: save_day_to_file(self.weather_data, self.forecast_data))
         self.action_Open.triggered.connect(self.open_day_file)
@@ -155,7 +155,7 @@ def main():
     window = MyGUI()
     app.exec_()
 
-    raise RuntimeError
+    #raise RuntimeError
 
 if __name__ == '__main__':
     main()
