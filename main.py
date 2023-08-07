@@ -1,12 +1,12 @@
 import requests
 import sys
 import json
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import *
-from PyQt5 import uic
+from PyQt5.QtGui import QLinearGradient, QIcon
 from support import get_image, get_timezone, get_unix_to_time, get_unix_to_short_date, get_api_key, get_forecast_days, \
-    get_country_codes, read_country, draw_city, save_day_to_file, message_box, get_unix
-from settings import SMALL_IMAGE_SIZE, BIG_IMAGE_SIZE, BACKGROUND_COLOR, FRAMES_VARIABLES
+    get_country_codes, read_country, draw_city, save_day_to_file, message_box, get_unix, load_stylesheet
+from settings import SMALL_IMAGE_SIZE, BIG_IMAGE_SIZE, STYLE, FRAMES_VARIABLES
 from options import Options
 
 API_KEY = get_api_key()
@@ -30,24 +30,29 @@ class MyGUI(QMainWindow):
         uic.loadUi('gui/mygui.ui', self)
         self.show()
 
-        # Configure all buttons-------------
+        # Configuring the appearance of the window-----------------------------------------------------------
+        self.setStyleSheet(STYLE)
+        self.setWindowTitle("Weather App by kkamczak")
+        self.setFixedSize(self.size())
+        self.setWindowIcon(QIcon('graphics/small_full_sun.png'))
+
+        # Configure all buttons------------------------------------------------------------------------------
         self.push_Button_Search.clicked.connect(self.search)
         self.action_Close.triggered.connect(exit)
         self.action_Settings.triggered.connect(self.open_options)
         self.action_Save.triggered.connect(lambda: save_day_to_file(self.weather_data, self.forecast_data))
         self.action_Open.triggered.connect(self.open_day_file)
 
-        # Define data-----------------------
+        # Define data-----------------------------------------------------------------------------------------
         self.weather_data = None
         self.forecast_data = None
         self.forecast_days = None
 
-        self.setStyleSheet(f'background-color: {BACKGROUND_COLOR};')
-
+        # Show random city weather and forecast---------------------------------------------------------------
         self.search(start=True)
 
-
     def search(self, start=False, save=None) -> None:
+        self.show_error_message(clear=True)
         if save == None:
             if start == False: user_input = self.line_edit_search.text()
             else: user_input = draw_city()
@@ -55,20 +60,23 @@ class MyGUI(QMainWindow):
                 f'https://api.openweathermap.org/data/2.5/forecast?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
             self.weather_data = requests.get(
                 f'https://api.openweathermap.org/data/2.5/weather?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
-            print(self.weather_data)
         else:
             self.weather_data = save[0]
             self.forecast_data = save[1]
 
-        if self.weather_data['cod'] == 401 or self.weather_data['cod'] == '404':
-            message_box('There was problem with loading weather data of this location!', self.weather_data['message'])
+        if self.weather_data['cod'] == 401 or self.weather_data['cod'] == '404' or self.weather_data['cod'] == '400':
+            #message_box('There was problem with loading weather data of this location!', self.weather_data['message'])
+            self.show_error_message(message=self.weather_data['message'])
         else:
             self.update_informations(self.weather_data)
 
-        if self.forecast_data['cod'] == 401 or self.weather_data['cod'] == '404':
-            message_box('There was problem with loading forecast data of this location!', self.forecast_data['message'])
+        if self.forecast_data['cod'] == 401 or self.forecast_data['cod'] == '404'or self.forecast_data['cod'] == '400':
+            pass
+            #message_box('There was problem with loading forecast data of this location!', self.forecast_data['message'])
         else:
             self.update_forecast(self.forecast_data)
+
+
 
 
 
@@ -126,7 +134,6 @@ class MyGUI(QMainWindow):
     def change_api_key(self, new_key: str) -> None:
         globals()['API_KEY'] = new_key
 
-
     def open_day_file(self) -> None:
         file_name = QFileDialog.getOpenFileName(self, 'Open file', 'D:\GitHub\Weather_App\saves', '*.json')
         try:
@@ -135,6 +142,10 @@ class MyGUI(QMainWindow):
             self.search(save=content)
         except FileNotFoundError:
             print('No such directory')
+    def show_error_message(self, message: str ='', clear: bool = False) -> None:
+        if not clear: text = f"There was problem: {message}"
+        else: text = ''
+        self.label_error_message.setText(text)
 
 
 

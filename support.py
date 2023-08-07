@@ -118,4 +118,6 @@ def read_country(code: str, code_list: pd.core.frame.DataFrame) -> str:
 def draw_city() -> str:
     return random.choice(CITIES)
 
-
+def load_stylesheet() -> str:
+    with open('style.css', 'r') as f:
+        return f.read()

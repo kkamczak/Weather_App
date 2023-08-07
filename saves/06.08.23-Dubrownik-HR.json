@@ -6,30 +6,30 @@
         },
         "weather": [
             {
-                "id": 800,
-                "main": "Clear",
-                "description": "bezchmurnie",
-                "icon": "01n"
+                "id": 801,
+                "main": "Clouds",
+                "description": "pochmurnie",
+                "icon": "02n"
             }
         ],
         "base": "stations",
         "main": {
-            "temp": 21.8,
-            "feels_like": 22.07,
-            "temp_min": 21.8,
-            "temp_max": 21.8,
-            "pressure": 1008,
-            "humidity": 78
+            "temp": 19.8,
+            "feels_like": 20.29,
+            "temp_min": 19.8,
+            "temp_max": 19.8,
+            "pressure": 1010,
+            "humidity": 94
         },
         "visibility": 10000,
         "wind": {
-            "speed": 1.54,
-            "deg": 100
+            "speed": 4.12,
+            "deg": 90
         },
         "clouds": {
-            "all": 0
+            "all": 20
         },
-        "dt": 1691348642,
+        "dt": 1691354264,
         "sys": {
             "type": 1,
             "id": 6383,
@@ -50,15 +50,15 @@
             {
                 "dt": 1691355600,
                 "main": {
-                    "temp": 21.54,
-                    "feels_like": 21.81,
-                    "temp_min": 21.02,
-                    "temp_max": 21.54,
-                    "pressure": 1009,
-                    "sea_level": 1009,
+                    "temp": 19.8,
+                    "feels_like": 20.29,
+                    "temp_min": 19.8,
+                    "temp_max": 21.02,
+                    "pressure": 1010,
+                    "sea_level": 1010,
                     "grnd_level": 1006,
-                    "humidity": 79,
-                    "temp_kf": 0.52
+                    "humidity": 94,
+                    "temp_kf": -1.22
                 },
                 "weather": [
                     {
@@ -69,7 +69,7 @@
                     }
                 ],
                 "clouds": {
-                    "all": 11
+                    "all": 20
                 },
                 "wind": {
                     "speed": 2.54,
@@ -89,15 +89,15 @@
             {
                 "dt": 1691366400,
                 "main": {
-                    "temp": 21.57,
-                    "feels_like": 21.74,
-                    "temp_min": 21.46,
-                    "temp_max": 21.57,
-                    "pressure": 1009,
-                    "sea_level": 1009,
+                    "temp": 20.35,
+                    "feels_like": 20.71,
+                    "temp_min": 20.35,
+                    "temp_max": 21.46,
+                    "pressure": 1010,
+                    "sea_level": 1010,
                     "grnd_level": 1006,
-                    "humidity": 75,
-                    "temp_kf": 0.11
+                    "humidity": 87,
+                    "temp_kf": -1.11
                 },
                 "weather": [
                     {
@@ -108,7 +108,7 @@
                     }
                 ],
                 "clouds": {
-                    "all": 34
+                    "all": 30
                 },
                 "wind": {
                     "speed": 2.54,
@@ -128,15 +128,15 @@
             {
                 "dt": 1691377200,
                 "main": {
-                    "temp": 20.71,
-                    "feels_like": 20.69,
-                    "temp_min": 20.71,
+                    "temp": 20.41,
+                    "feels_like": 20.54,
+                    "temp_min": 20.41,
                     "temp_max": 20.71,
                     "pressure": 1010,
                     "sea_level": 1010,
                     "grnd_level": 1006,
-                    "humidity": 71,
-                    "temp_kf": 0
+                    "humidity": 78,
+                    "temp_kf": -0.3
                 },
                 "weather": [
                     {
@@ -147,7 +147,7 @@
                     }
                 ],
                 "clouds": {
-                    "all": 44
+                    "all": 36
                 },
                 "wind": {
                     "speed": 2.78,
