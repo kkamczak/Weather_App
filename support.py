@@ -3,6 +3,7 @@ import pandas as pd
 import random
 import time
 import json
+import os
 from datetime import datetime
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
@@ -19,17 +20,31 @@ def message_box(msg: str, info: str = None) -> None:
     message.exec_()
 
 def get_api_key() -> str:
-    with open('api.txt') as f:
-        api = f.readline()
-    return api
+    try:
+        with open('api.txt') as f:
+            api = f.readline()
+        return api
+    except FileNotFoundError:
+        return ''
 
 def save_api_key(new_key: str) -> None:
     with open('api.txt', 'w') as f:
         f.write(new_key)
 
+def check_for_api_file() -> bool:
+    path = 'api.txt'
+    if os.path.exists(path):
+        if os.path.getsize(path) != 0:
+            return True
+        else:
+            return False
+    else:
+        return False
+
 def save_day_to_file(weather: dict, forecast: dict) -> None:
+    if weather == None or forecast == None: return
     data = [weather, forecast]
-    name = f"{get_unix_to_full_date(weather['dt'])}-{weather['name']}-{weather['sys']['country']}.json"
+    name = f"{get_unix_to_datetime(weather['dt'], mode='date')}-{weather['name']}-{weather['sys']['country']}.json"
     with open(f'saves/{name}', 'w') as f:
         json.dump(data, f, indent=4)
 
@@ -40,23 +55,26 @@ def get_image(icon: str, size: tuple) -> QPixmap:
 
     return QPixmap(image).scaled(size[0], size[1])
 
-def get_unix_to_time(timezone: int = 0) -> str:
-    return str(datetime.fromtimestamp(get_unix()+timezone).strftime('%H:%M'))
+def get_unix_to_datetime(data: int, mode: str = 'full') -> str:
+    if mode == 'full': format = '%d.%m.%y - %H:%M'
+    elif mode == 'date': format = '%d.%m.%y'
+    elif mode == 'short_date': format = '%d.%m'
+    elif mode == 'hours': format = '%H'
+    elif mode == 'day': format = '%d'
+    elif mode == 'time': format = '%H:%M'
+    else: raise ValueError('Wrong type of datetime mode...')
 
-def get_unix_to_short_date(data: int) -> str:
-    return str(datetime.fromtimestamp(data).strftime('%d.%m'))
+    return str(datetime.fromtimestamp(data).strftime(format))
 
-def get_unix_to_full_date(data: int) -> str:
-    return str(datetime.fromtimestamp(data).strftime('%d.%m.%y'))
+def get_actual_time(timezone: int = 0) -> str:
+    return str(datetime.fromtimestamp(get_unix() + timezone).strftime('%H:%M'))
+
+def get_unix_to_time(time: int, timezone: int = 0, actual_time: int = 0) -> str:
+    delta = get_unix() + timezone - actual_time
+    return str(datetime.fromtimestamp(time + delta).strftime('%H:%M'))
 
 def get_unix_to_full_datetime(data: int) -> str:
     return str(datetime.fromtimestamp(data).strftime('%d.%m.%y - %H:%M'))
-
-def get_unix_to_hours(data: int) -> int:
-    return int(datetime.fromtimestamp(data).strftime('%H'))
-
-def get_unix_to_day(data: int) -> int:
-    return int(datetime.fromtimestamp(data).strftime('%d'))
 
 def get_utc() -> datetime:
     return datetime.utcnow()
@@ -74,8 +92,8 @@ def get_forecast_days(data: dict) -> list:
     data = data['list']
     days = []
     for id, day in enumerate(data):
-        day_number = get_unix_to_day(day['dt'])
-        hour = get_unix_to_hours(day['dt'])
+        day_number = int(get_unix_to_datetime(day['dt'], 'day'))
+        hour = int(get_unix_to_datetime(day['dt'], 'hours'))
         days.append((id, day_number, hour))
     new_days_indicators = []
     active_day = days[0]
@@ -94,7 +112,11 @@ def get_forecast_days(data: dict) -> list:
     return new_days
 
 def get_country_codes() -> pd.core.frame.DataFrame:
-    data = pd.read_html('https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', encoding="utf8")[0]
+    try:
+        data = pd.read_html('https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', encoding="utf8")[0]
+    except:
+        print('There was problem with loading country codes')
+        return
     data = data.droplevel(0, axis=1)
     data.reset_index(drop=True, inplace=True)
     selected_columns = ['Country name[5]', 'Alpha-2 code[5]']
@@ -110,7 +132,7 @@ def read_country(code: str, code_list: pd.core.frame.DataFrame) -> str:
     try:
         name = code_list.loc[code, 'Country']
         if len(name) > 10: name = code
-    except KeyError:
+    except (KeyError, AttributeError):
         print('Code not found')
         name = code
     return name

@@ -4,8 +4,8 @@ import json
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QLinearGradient, QIcon
-from support import get_image, get_timezone, get_unix_to_time, get_unix_to_short_date, get_api_key, get_forecast_days, \
-    get_country_codes, read_country, draw_city, save_day_to_file, get_unix
+from support import get_image, get_timezone, get_unix_to_time, get_api_key, get_forecast_days, get_country_codes, \
+    read_country, draw_city, save_day_to_file, get_unix, check_for_api_file, get_unix_to_datetime, get_actual_time
 from settings import SMALL_IMAGE_SIZE, BIG_IMAGE_SIZE, STYLE, FRAMES_VARIABLES
 from options import Options
 
@@ -48,51 +48,54 @@ class MyGUI(QMainWindow):
         self.forecast_data = None
         self.forecast_days = None
 
-        # Show random city weather and forecast---------------------------------------------------------------
-        self.search(start=True)
+        # Check if this is first application run--------------------------------------------------------------
+        if not check_for_api_file():
+            self.open_options()
+        else:
+            # Show random city weather and forecast----------------------------------------------------------
+            self.search(start=True)
 
     def search(self, start=False, save=None) -> None:
         self.show_error_message(clear=True)
         if save == None:
             if start == False: user_input = self.line_edit_search.text()
             else: user_input = draw_city()
-            self.forecast_data = requests.get(
-                f'https://api.openweathermap.org/data/2.5/forecast?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
-            self.weather_data = requests.get(
-                f'https://api.openweathermap.org/data/2.5/weather?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
+            try:
+                self.forecast_data = requests.get(
+                    f'https://api.openweathermap.org/data/2.5/forecast?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
+                self.weather_data = requests.get(
+                    f'https://api.openweathermap.org/data/2.5/weather?q={user_input}&lang=pl&units=metric&appid={API_KEY}').json()
+            except:
+                self.show_error_message(message='There is problem with the connection to the API server...')
+                return
         else:
             self.weather_data = save[0]
             self.forecast_data = save[1]
 
         if self.weather_data['cod'] == 401 or self.weather_data['cod'] == '404' or self.weather_data['cod'] == '400':
-            #message_box('There was problem with loading weather data of this location!', self.weather_data['message'])
             self.show_error_message(message=self.weather_data['message'])
         else:
             self.update_informations(self.weather_data)
 
         if self.forecast_data['cod'] == 401 or self.forecast_data['cod'] == '404'or self.forecast_data['cod'] == '400':
             pass
-            #message_box('There was problem with loading forecast data of this location!', self.forecast_data['message'])
         else:
             self.update_forecast(self.forecast_data)
-
-
-
 
 
     def update_informations(self, weather: dict) -> None:
         name = weather['name']
         timezone = get_timezone(weather['timezone'])
         country = read_country(weather['sys']['country'], COUNTRY_CODES)
-        time = get_unix_to_time(weather['timezone'])
-        date = get_unix_to_short_date(weather['dt'])
+        time = get_actual_time(weather['timezone'])
+        date = get_unix_to_datetime(weather['dt'], 'short_date')
         weather_description = weather['weather'][0]['description']
         temp = f"{round(weather['main']['temp'])}°C"
         humidity = f"{str(round(weather['main']['humidity']))}%"
         pressure = f"{str(weather['main']['pressure'])}hPa"
         wind = f"{str(weather['wind']['speed'])}m/s"
-        sunrise = get_unix_to_time(weather['sys']['sunrise'])
-        sunset = get_unix_to_time(weather['sys']['sunset'])
+        sunrise = get_unix_to_time(weather['sys']['sunrise'], weather['timezone'], weather['dt'])
+        sunset = get_unix_to_time(weather['sys']['sunset'], weather['timezone'], weather['dt'])
         icon = weather['weather'][0]['icon']
         image = get_image(icon, BIG_IMAGE_SIZE)
 
@@ -112,10 +115,10 @@ class MyGUI(QMainWindow):
         forecast_days = get_forecast_days(forecast)
 
         for i, day in enumerate(forecast_days):
-            date = get_unix_to_short_date(day['dt'])
-            date_now = get_unix_to_short_date(get_unix())
+            date = get_unix_to_datetime(day['dt'], 'short_date')
+            date_now = get_unix_to_datetime(get_unix(), 'short_date')
             temp_max = str(round(day['main']['temp_max']))
-            temp_min = str(round(day['main']['temp_min']))
+            #temp_min = str(round(day['main']['temp_min']))
             temp = f"{temp_max}°C"
             weather = day['weather'][0]['main']
             icon = day['weather'][0]['icon']
@@ -125,7 +128,6 @@ class MyGUI(QMainWindow):
             getattr(self, f'{FRAMES_VARIABLES[1]}_{i + 1}').setPixmap(image)
             getattr(self, f'{FRAMES_VARIABLES[2]}_{i + 1}').setText(temp)
             getattr(self, f'{FRAMES_VARIABLES[3]}_{i + 1}').setText(weather)
-
 
     def open_options(self) -> None:
         self.options = Options(API_KEY, self.change_api_key)
@@ -146,7 +148,6 @@ class MyGUI(QMainWindow):
         if not clear: text = f"There was problem: {message}"
         else: text = ''
         self.label_error_message.setText(text)
-
 
 
 def main():
