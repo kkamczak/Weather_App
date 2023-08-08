@@ -1,10 +1,15 @@
-from PyQt5.QtWidgets import *
+'''
+This module is responsible for displaying the options window and its content.
+'''
+from typing import Callable
+from PyQt5.QtWidgets import QWidget
 from PyQt5 import uic
 from settings import STYLE
 from support import save_api_key
 
+
 class Options(QWidget):
-    def __init__(self, api_key: str, change_api_key) -> None:
+    def __init__(self, api_key: str, change_api_key: Callable[[str], None]) -> None:
         super().__init__()
         # Load and init GUI-----------------
         uic.loadUi('gui/options.ui', self)
@@ -30,4 +35,3 @@ class Options(QWidget):
 
     def show_api_key(self) -> None:
         self.label_api_current.setText(f'Current API Key: {self.api_key}')
-
