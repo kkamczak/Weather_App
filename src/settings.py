@@ -5,6 +5,8 @@ BIG_IMAGE_SIZE = (150, 150)
 HOUR_MIN = 12
 HOUR_MAX = 16
 
+TIMEOUT = 10
+
 STYLE = """
     QWidget{
         background: #5e7572;
