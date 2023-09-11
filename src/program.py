@@ -1,24 +1,35 @@
 '''
 This module is responsible for displaying the program window and its content.
 '''
-import sys
 import json
 import requests
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QApplication
+from PyQt5 import uic
 from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QMainWindow, QFileDialog
+from src.options import Options
+from src.settings import SMALL_IMAGE_SIZE, BIG_IMAGE_SIZE, STYLE, FRAMES_VARIABLES, TIMEOUT
 from src.support import get_image, get_timezone, get_unix_to_time, \
     get_api_key, get_forecast_days, get_country_codes, read_country, \
     draw_city, save_day_to_file, get_unix, check_for_api_file, \
     get_unix_to_datetime, get_actual_time
-from src.settings import SMALL_IMAGE_SIZE, BIG_IMAGE_SIZE, STYLE, FRAMES_VARIABLES, TIMEOUT
-from src.options import Options
 
 API_KEY = get_api_key()
 COUNTRY_CODES = get_country_codes()
 
 class MyGUI(QMainWindow):
+    """
+    This class is responsible for creating and managing the main program window.
+    """
     def __init__(self) -> None:
+        """
+        Initialize the main program window.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         super().__init__()
         # Load and init GUI-----------------
         uic.loadUi('src/gui/mygui.ui', self)
@@ -51,6 +62,16 @@ class MyGUI(QMainWindow):
             self.search(start=True)
 
     def search(self, start=False, save=None) -> None:
+        """
+        Perform a weather search using user input or a randomly chosen city.
+
+        Args:
+            start (bool): Whether the search is initiated at the start of the application.
+            save: Data from a previously saved weather search.
+
+        Returns:
+            None
+        """
         self.show_error_message(clear=True)
         if save is None:
             if start is False:
@@ -60,10 +81,10 @@ class MyGUI(QMainWindow):
             try:
                 self.forecast_data = requests.get(
                     f'https://api.openweathermap.org/data/2.5/forecast?q={user_input}'
-                    f'&lang=pl&units=metric&appid={API_KEY}', timeout=10).json()
+                    f'&lang=pl&units=metric&appid={API_KEY}', timeout=TIMEOUT).json()
                 self.weather_data = requests.get(
                     f'https://api.openweathermap.org/data/2.5/weather?q={user_input}'
-                    f'&lang=pl&units=metric&appid={API_KEY}', timeout=10).json()
+                    f'&lang=pl&units=metric&appid={API_KEY}', timeout=TIMEOUT).json()
             except ConnectionError:
                 self.show_error_message(message=
                                         'There is problem with the connection to the API server...')
@@ -88,6 +109,15 @@ class MyGUI(QMainWindow):
 
 
     def update_informations(self, weather: dict) -> None:
+        """
+        Update the weather information displayed on the main window.
+
+        Args:
+            weather (dict): The weather data.
+
+        Returns:
+            None
+        """
         name = weather['name']
         timezone = get_timezone(weather['timezone'])
         country = read_country(weather['sys']['country'], COUNTRY_CODES)
@@ -115,11 +145,15 @@ class MyGUI(QMainWindow):
         self.label_main_image.setPixmap(image)
 
     def update_forecast(self, forecast: dict) -> None:
-        '''
+        """
+        Update the weather forecast information displayed on the main window.
 
-        :param forecast:
-        :return:
-        '''
+        Args:
+            forecast (dict): The forecast data.
+
+        Returns:
+            None
+        """
         forecast_days = get_forecast_days(forecast)
 
         for i, day in enumerate(forecast_days):
@@ -140,13 +174,34 @@ class MyGUI(QMainWindow):
             getattr(self, f'{FRAMES_VARIABLES[3]}_{i + 1}').setText(weather)
 
     def open_options(self) -> None:
+        """
+        Open the options window to configure settings.
+
+        Returns:
+            None
+        """
         self.options = Options(API_KEY, self.change_api_key)
         self.options.show()
 
     def change_api_key(self, new_key: str) -> None:
+        """
+        Change the global API key variable.
+
+        Args:
+            new_key (str): The new API key.
+
+        Returns:
+            None
+        """
         globals()['API_KEY'] = new_key
 
     def open_day_file(self) -> None:
+        """
+        Open a previously saved weather search from a JSON file.
+
+        Returns:
+            None
+        """
         file_name = QFileDialog.getOpenFileName\
             (self, 'Open file', r'D:\GitHub\Weather_App\src\saves', '*.json')
         try:
@@ -156,6 +211,16 @@ class MyGUI(QMainWindow):
         except FileNotFoundError:
             print('No such directory')
     def show_error_message(self, message: str ='', clear: bool = False) -> None:
+        """
+        Display an error message on the main window.
+
+        Args:
+            message (str): The error message to display.
+            clear (bool): Whether to clear the error message.
+
+        Returns:
+            None
+        """
         if not clear:
             text = f"There was problem: {message}"
         else:

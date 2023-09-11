@@ -1,5 +1,5 @@
 '''
-This module is responsible for displaying the program window and its content.
+This is main module that starts program
 '''
 import sys
 from PyQt5.QtWidgets import QApplication, QMessageBox

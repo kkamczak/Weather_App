@@ -14,12 +14,16 @@ from PyQt5.QtGui import QPixmap, QImage
 from src.settings import HOUR_MIN, HOUR_MAX, CITIES, TIMEOUT
 
 def message_box(msg: str, info: Optional[str] = None) -> None:
-    '''
-    This function display message box
-    :param msg: str
-    :param info: str
-    :return: None
-    '''
+    """
+    Display a message box with an optional additional info message.
+
+    Args:
+        msg (str): The main message to display.
+        info (Optional[str]): Additional information to display.
+
+    Returns:
+        None
+    """
     if info is not None:
         text = f'{msg}\n--message: "{info}"'
     else:
@@ -29,10 +33,12 @@ def message_box(msg: str, info: Optional[str] = None) -> None:
     message.exec_()
 
 def get_api_key() -> str:
-    '''
-    This function read api key from the file
-    :return: str
-    '''
+    """
+    Read the API key from a file.
+
+    Returns:
+        str: The API key read from the file.
+    """
     try:
         with open('src/api.txt', encoding='utf-8') as file:
             api = file.readline()
@@ -41,19 +47,25 @@ def get_api_key() -> str:
         return ''
 
 def save_api_key(new_key: str) -> None:
-    '''
-    This function save api key in the file
-    :param new_key: str
-    :return: None
-    '''
+    """
+    Save an API key to a file.
+
+    Args:
+        new_key (str): The new API key to be saved.
+
+    Returns:
+        None
+    """
     with open('src/api.txt', 'w', encoding='utf-8') as file:
         file.write(new_key)
 
 def check_for_api_file() -> bool:
-    '''
-    Check if api key file exists
-    :return: bool
-    '''
+    """
+    Check if the API key file exists.
+
+    Returns:
+        bool: True if the file exists and is not empty, False otherwise.
+    """
     path = 'src/api.txt'
     if os.path.exists(path):
         if os.path.getsize(path) != 0:
@@ -62,12 +74,16 @@ def check_for_api_file() -> bool:
     return False
 
 def save_day_to_file(weather: dict, forecast: dict) -> None:
-    '''
-    Save weather and forecast data to the file
-    :param weather: dict
-    :param forecast: dict
-    :return: None
-    '''
+    """
+    Save weather and forecast data to a file.
+
+    Args:
+        weather (dict): Weather data to be saved.
+        forecast (dict): Forecast data to be saved.
+
+    Returns:
+        None
+    """
     if weather is None or forecast is None:
         return
     data = [weather, forecast]
@@ -77,12 +93,16 @@ def save_day_to_file(weather: dict, forecast: dict) -> None:
         json.dump(data, file, indent=4)
 
 def get_image(icon: str, size: tuple[int]) -> QPixmap:
-    '''
-    This function gets image from website
-    :param icon: str
-    :param size: tuple[int]
-    :return: QPixmap
-    '''
+    """
+    Get an image from a website and return it as a QPixmap.
+
+    Args:
+        icon (str): The icon name.
+        size (tuple[int]): The desired size of the image.
+
+    Returns:
+        QPixmap: The QPixmap object representing the image.
+    """
     url=f'https://openweathermap.org/img/wn/{icon}@2x.png'
     image = QImage()
     image.loadFromData(requests.get(url, timeout=TIMEOUT).content)
@@ -90,12 +110,16 @@ def get_image(icon: str, size: tuple[int]) -> QPixmap:
     return QPixmap(image).scaled(size[0], size[1])
 
 def get_unix_to_datetime(data: int, mode: str = 'full') -> str:
-    '''
-    Converts unix code to datetime format
-    :param data: int
-    :param mode: str
-    :return: str
-    '''
+    """
+    Convert a Unix timestamp to a datetime format.
+
+    Args:
+        data (int): The Unix timestamp to be converted.
+        mode (str): The format mode for the conversion.
+
+    Returns:
+        str: The datetime in the specified format.
+    """
     if mode == 'full':
         look = '%d.%m.%y - %H:%M'
     elif mode == 'date':
@@ -114,44 +138,60 @@ def get_unix_to_datetime(data: int, mode: str = 'full') -> str:
     return str(datetime.fromtimestamp(data).strftime(look))
 
 def get_actual_time(timezone: int = 0) -> str:
-    '''
-    Calculates the current time in a location based on the timezone
-    :param timezone: int
-    :return: str
-    '''
+    """
+    Calculate the current time in a location based on the timezone.
+
+    Args:
+        timezone (int): The timezone offset.
+
+    Returns:
+        str: The current time in HH:MM format.
+    """
     return str(datetime.fromtimestamp(get_unix() + timezone).strftime('%H:%M'))
 
 def get_unix_to_time(dt_time: int, timezone: int = 0, actual_time: int = 0) -> str:
-    '''
-    Calculates the time for sunset and sunrise in a location based on the timezone
-    :param dt_time: int
-    :param timezone: int
-    :param actual_time: int
-    :return: str
-    '''
+    """
+    Calculate the time for sunset and sunrise in a location based on the timezone.
+
+    Args:
+        dt_time (int): The Unix timestamp for the event.
+        timezone (int): The timezone offset.
+        actual_time (int): The actual time.
+
+    Returns:
+        str: The time of the event in HH:MM format.
+    """
     delta = get_unix() + timezone - actual_time
     return str(datetime.fromtimestamp(dt_time + delta).strftime('%H:%M'))
 
 def get_utc() -> datetime:
-    '''
-    Gets actual utc code
-    :return: datetime
-    '''
+    """
+    Get the current UTC time.
+
+    Returns:
+        datetime: The current UTC time.
+    """
     return datetime.utcnow()
 
 def get_unix() -> int:
-    '''
-    Gets actual unix code based on utc
-    :return: int
-    '''
+    """
+    Get the current Unix timestamp based on UTC.
+
+    Returns:
+        int: The current Unix timestamp.
+    """
     return int(time.mktime(get_utc().timetuple()))
 
 def get_timezone(timezone: int) -> str:
-    '''
-    Converts timezone to GMT format
-    :param timezone: int
-    :return: str
-    '''
+    """
+    Convert a timezone offset to GMT format.
+
+    Args:
+        timezone (int): The timezone offset.
+
+    Returns:
+        str: The timezone in GMT format (e.g., 'UTC+2.00').
+    """
     sign = '+'
     if int(timezone) < 0:
         sign = ''
@@ -159,11 +199,15 @@ def get_timezone(timezone: int) -> str:
     return f'UTC{sign}{int(timezone / 3600)}.00'
 
 def get_forecast_days(data: dict) -> list:
-    '''
-    Selects the appropriate weather forecast records for the following days
-    :param data: dict
-    :return: list
-    '''
+    """
+    Select appropriate weather forecast records for the following days.
+
+    Args:
+        data (dict): The weather forecast data.
+
+    Returns:
+        list: A list of selected weather forecast records.
+    """
     data = data['list']
     days = []
     for number, day in enumerate(data):
@@ -187,10 +231,12 @@ def get_forecast_days(data: dict) -> list:
     return new_days
 
 def get_country_codes() -> pd.DataFrame:
-    '''
-    Gets country names based on country codes from website
-    :return: pd.DataFrame
-    '''
+    """
+    Get country names based on country codes from a website.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing country codes and names.
+    """
     try:
         data = pd.read_html(
             'https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes', encoding="utf8")[0]
@@ -212,12 +258,16 @@ def get_country_codes() -> pd.DataFrame:
     return codes_data
 
 def read_country(code: str, code_list: pd.DataFrame) -> str:
-    '''
-    Convert country code to country name
-    :param code: str
-    :param code_list: pd.DataFrame
-    :return: str
-    '''
+    """
+    Convert a country code to a country name.
+
+    Args:
+        code (str): The country code to be converted.
+        code_list (pd.DataFrame): A DataFrame containing country codes and names.
+
+    Returns:
+        str: The country name.
+    """
     try:
         name = str(code_list.loc[code, 'Country'])
         if len(name) > 10:
@@ -228,16 +278,20 @@ def read_country(code: str, code_list: pd.DataFrame) -> str:
     return name
 
 def draw_city() -> str:
-    '''
-    Pick random city name
-    :return: str
-    '''
+    """
+    Pick a random city name.
+
+    Returns:
+        str: A randomly selected city name.
+    """
     return random.choice(CITIES)
 
 def load_stylesheet() -> str:
-    '''
-    Loading stylesheet file
-    :return: str
-    '''
+    """
+    Load a stylesheet file and return its contents as a string.
+
+    Returns:
+        str: The contents of the stylesheet file.
+    """
     with open('src/style.css', 'r', encoding='utf-8') as file:
         return file.read()
